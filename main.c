@@ -20,6 +20,9 @@ struct station {
 
 };
 // ************************************************
+#define TRAIN_ARRIVE_TIME 500000 // micro-seconds
+#define TRAIN_AVAILABLE_SEATS 5
+
 struct station cal_station;
 pthread_mutex_t station_key;
 
@@ -30,8 +33,6 @@ pthread_cond_t train_loaded;
 pthread_mutex_t seats_key;
 int seats_count;
 
-#define TRAIN_ARRIVE_TIME 
-
 
 // ***********************************************************************
 // ***********************************************************************
@@ -40,9 +41,9 @@ int seats_count;
 // ************************************************
 void* passenger_arrive(void* arg){
 
-	printf("\npassenger created");
+	//printf("\npassenger created");
 
-	/*struct station *station = (struct station*)arg;
+	struct station *station = (struct station*)arg;
 
 	// 01 - add yourself to station
 	pthread_mutex_lock(&station_key);
@@ -54,19 +55,25 @@ void* passenger_arrive(void* arg){
 	// 02 - wait on train
 	pthread_cond_wait(&train_arrived, &station_key);
 
-	printf("\ntrain arrived");
+	//printf("\ntrain arrived");
 
 	pthread_mutex_lock(&seats_key);
-	station->passenger_count-=1;
-	seats_count-=1;
 
-	printf("\npassenger boarded");
+	if(seats_count!=0){
 
-	if(station->passenger_count==0||seats_count==0){
-		pthread_cond_signal(&train_loaded);
+		station->passenger_count-=1;
+		seats_count-=1;
+		printf("\npassenger boarded");
+
+		if(station->passenger_count==0||seats_count==0){
+			pthread_cond_signal(&train_loaded);
+		}
+
 	}
+	
+	pthread_mutex_unlock(&seats_key);
 	pthread_mutex_unlock(&station_key);
-	pthread_mutex_unlock(&seats_key);*/
+	
 
 	pthread_exit(0);
 
@@ -78,21 +85,27 @@ void* passenger_arrive(void* arg){
 // ************************************************
 void* train_arrive(void* arg){
 
-	printf("\ntrain created ************************************");
-
-	/*struct station *station = (struct station*)arg;
+	struct station *station = (struct station*)arg;
 
 	// 01 - announce train has arrived
 	pthread_mutex_lock(&station_key);
 
-	printf("\ntrain arrived");
+	printf("\n****************************************************************");
+	printf("\nTRAIN ARRIVED");
+	printf("\n****************************************************************");
 
 	if(station->passenger_count==0){
 		pthread_mutex_unlock(&station_key);
 		pthread_exit(0);
 	}
 	pthread_cond_broadcast(&train_arrived);
-	pthread_cond_wait(&train_loaded, &station_key);*/
+	pthread_cond_wait(&train_loaded, &station_key);
+
+	printf("\n****************************************************************");
+	printf("\nTRAIN LEFT");
+	printf("\n****************************************************************");
+
+	pthread_mutex_unlock(&station_key);
 
 	pthread_exit(0);
 
@@ -130,8 +143,9 @@ void* spawn_trains(void* arg){
 
 	while(1){
 		// create trains
-		usleep(500000);
+		usleep(TRAIN_ARRIVE_TIME);
 
+		seats_count=TRAIN_AVAILABLE_SEATS;
 		pthread_t train;
 		pthread_create(&train, NULL, train_arrive, &cal_station);
 
