@@ -2,17 +2,17 @@
 
 struct station {
 	
-	int passenger_count;
-	int train_in_station; // boolean
+	int waiting_passenger_count;
+	int available_seat_count;
+	int allowed_passenger_count;
+	int train_left; // boolean
 
 	pthread_mutex_t station_key;
 
 	pthread_cond_t train_arrived;
-	pthread_cond_t seats_available;
 	pthread_cond_t train_loaded;
 
-	pthread_mutex_t seats_key;
-	int seats_count;
+	
 };
 
 void station_init(struct station *station);
