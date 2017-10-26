@@ -22,8 +22,8 @@ struct station {
 };
 // ************************************************
 #define TRAIN_ARRIVE_TIME 500000 // micro-seconds = 0.5 secods
-#define PASSENGER_ARRIVE_FREQUENCY 15000 // 150		15000
-#define TRAIN_AVAILABLE_SEATS 5 // 500		5
+#define PASSENGER_ARRIVE_FREQUENCY 150 // 150		15000
+#define TRAIN_AVAILABLE_SEATS 500 // 500		5
 
 struct station cal_station;
 pthread_mutex_t station_key;
@@ -49,34 +49,37 @@ void* passenger_arrive(void* arg){
 
 	// 01 - add yourself to station
 	pthread_mutex_lock(&station_key);
-	//station->passenger_list.add(this);
 	station->passenger_count+=1;
+	pthread_mutex_unlock(&station_key);
 
 	printf("\npassenger arrived,\t passenger_count=%d", station->passenger_count);
 
 	// 02 - wait on train
-	// handle train already in station condition
-	if(station->train_in_station==0){
-		pthread_cond_wait(&train_arrived, &station_key);
-	}
-
 	pthread_mutex_lock(&seats_key);
-	if(seats_count!=0){
+	while(1){
 
-		station->passenger_count-=1;
-		seats_count-=1;
-		printf("\npassenger boarded");
+		if(seats_count>0){
+			
+			pthread_mutex_lock(&station_key);
+			station->passenger_count-=1;
+			seats_count-=1;
+			printf("\npassenger boarded");
 
-		if(station->passenger_count==0||seats_count==0){
-			pthread_cond_signal(&train_loaded);
+			if(station->passenger_count==0||seats_count==0){
+				pthread_cond_signal(&train_loaded);
+			}
+			pthread_mutex_unlock(&seats_key);
+			pthread_mutex_unlock(&station_key);
+			break;
+
+		}else{
+			// wait for next train
+			pthread_cond_wait(&train_arrived, &seats_key);
+			continue;
 		}
 
 	}
 	
-	pthread_mutex_unlock(&seats_key);
-	pthread_mutex_unlock(&station_key);
-	
-
 	pthread_exit(0);
 
 

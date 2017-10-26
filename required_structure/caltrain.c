@@ -1,4 +1,6 @@
 #include <pthread.h>
+#include <stdio.h>
+
 #include "caltrain.h"
 
 
@@ -7,15 +9,15 @@
 // ************************************************
 void station_init(struct station *station){
 	// FILL ME IN
-	station.passenger_count=0;
-	station.train_in_station=0;
+	station->passenger_count=0;
+	station->train_in_station=0;
 
-	pthread_mutex_init(&station_key, NULL);
-	pthread_mutex_init(&seats_key, NULL);
+	pthread_mutex_init(&station->station_key, NULL);
+	pthread_mutex_init(&station->seats_key, NULL);
 
-	pthread_cond_init(&train_arrived, NULL);
-	pthread_cond_init(&seats_available, NULL);
-	pthread_cond_init(&train_loaded, NULL);
+	pthread_cond_init(&station->train_arrived, NULL);
+	pthread_cond_init(&station->seats_available, NULL);
+	pthread_cond_init(&station->train_loaded, NULL);
 }
 
 
@@ -33,12 +35,15 @@ void station_load_train(struct station *station, int count){
 	printf("\n****************************************************************");
 	printf("\nTRAIN ARRIVED");
 	printf("\n****************************************************************");
+	printf("\nSeats count : %d", count);
 
 	// 01 - no passenger in station
-	if(station->passenger_count==0){
+	if(station->passenger_count==0||count==0){
 		printf("\n****************************************************************");
 		printf("\nTRAIN LEFT");
-		printf("\n****************************************************************");
+		printf("\n****************************************************************\n");
+		station->train_in_station=0;
+		station->seats_count=0;
 		pthread_mutex_unlock(&station->station_key);
 		return;
 	}
@@ -50,7 +55,7 @@ void station_load_train(struct station *station, int count){
 	station->train_in_station=0;
 	printf("\n****************************************************************");
 	printf("\nTRAIN LEFT");
-	printf("\n****************************************************************");
+	printf("\n****************************************************************\n");
 
 	pthread_mutex_unlock(&station->station_key);
 
@@ -66,32 +71,36 @@ void station_wait_for_train(struct station *station){
 
 	// 01 - add yourself to station
 	pthread_mutex_lock(&station->station_key);
-	//station->passenger_list.add(this);
 	station->passenger_count+=1;
+	pthread_mutex_unlock(&station->station_key);
 
 	printf("\npassenger arrived,\t passenger_count=%d", station->passenger_count);
 
 	// 02 - wait on train
-	// handle train already in station condition
-	if(station->train_in_station==0){
-		pthread_cond_wait(&station->train_arrived, &station->station_key);
-	}
-
 	pthread_mutex_lock(&station->seats_key);
-	if(station->seats_count!=0){
+	while(1){
 
-		station->passenger_count-=1;
-		station->seats_count-=1;
-		printf("\npassenger boarded");
+		if(station->seats_count>0){
+			
+			pthread_mutex_lock(&station->station_key);
+			station->passenger_count-=1;
+			station->seats_count-=1;
+			printf("\npassenger boarded");
 
-		if(station->passenger_count==0||station->seats_count==0){
-			pthread_cond_signal(&station->train_loaded);
+			if(station->passenger_count==0||station->seats_count==0){
+				pthread_cond_signal(&station->train_loaded);
+			}
+			pthread_mutex_unlock(&station->seats_key);
+			pthread_mutex_unlock(&station->station_key);
+			break;
+
+		}else{
+			// wait for next train
+			pthread_cond_wait(&station->train_arrived, &station->seats_key);
+			continue;
 		}
 
 	}
-	
-	pthread_mutex_unlock(&station->seats_key);
-	pthread_mutex_unlock(&station->station_key);
 	
 
 }
@@ -100,5 +109,8 @@ void station_wait_for_train(struct station *station){
 // ************************************************
 // ************************************************
 void station_on_board(struct station *station){
-	// FILL ME IN
+	
+
+
+
 }
