@@ -81,8 +81,11 @@ void station_wait_for_train(struct station *station){
 	while(1){
 
 		if(station->seats_count>0){
+
+			pthread_mutex_unlock(&station->seats_key);
+			return;
 			
-			pthread_mutex_lock(&station->station_key);
+			/*pthread_mutex_lock(&station->station_key);
 			station->passenger_count-=1;
 			station->seats_count-=1;
 			printf("\npassenger boarded");
@@ -92,7 +95,7 @@ void station_wait_for_train(struct station *station){
 			}
 			pthread_mutex_unlock(&station->seats_key);
 			pthread_mutex_unlock(&station->station_key);
-			break;
+			break;*/
 
 		}else{
 			// wait for next train
@@ -110,7 +113,16 @@ void station_wait_for_train(struct station *station){
 // ************************************************
 void station_on_board(struct station *station){
 	
-
+	pthread_mutex_lock(&station->station_key);
+	pthread_mutex_lock(&station->seats_key);
+	station->passenger_count-=1;
+	station->seats_count-=1;
+	printf("\npassenger boarded");
+	if(station->passenger_count==0||station->seats_count==0){
+		pthread_cond_signal(&station->train_loaded);
+	}
+	pthread_mutex_unlock(&station->seats_key);
+	pthread_mutex_unlock(&station->station_key);
 
 
 }
