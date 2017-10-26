@@ -13,7 +13,8 @@ void station_init(struct station *station){
 	// initialize station object
 	station->waiting_passenger_count=0;
 	station->available_seat_count=0;
-	station->allowed_passenger_count=0;
+	station->boarded_passenger_count=0;
+	station->max_allowed_passengers=0;
 	station->train_left=0;
 
 	pthread_mutex_init(&station->station_key, NULL);
@@ -30,7 +31,8 @@ void station_load_train(struct station *station, int count){
 	pthread_mutex_lock(&station->station_key);
 	station->train_left=0;
 	station->available_seat_count=count;
-	station->allowed_passenger_count=count;
+	station->boarded_passenger_count=0;
+	station->max_allowed_passengers=count;
 	pthread_cond_broadcast(&station->train_arrived);
 
 	// 02 - no passengers or no empty seats
@@ -41,14 +43,19 @@ void station_load_train(struct station *station, int count){
 		return;
 	}
 
-	// 03 - passengers are in station
-	pthread_cond_wait(&station->train_loaded, &station->station_key);
-	station->train_left=1;
-	printf("\nWaiting Passenger Count : %d\n", station->waiting_passenger_count);
-	printf("\nTrain Left\n");
-	pthread_mutex_unlock(&station->station_key);
-
-	return;
+	while(1){
+		// 03 - passengers are in station
+		if((station->waiting_passenger_count==0)||(station->available_seat_count==0)){
+			//printf("\n\t\tTrain Leaving\n");
+			station->train_left=1;
+			pthread_mutex_unlock(&station->station_key);
+			return;
+		}else{
+			pthread_cond_wait(&station->train_loaded, &station->station_key);
+			continue;
+		}
+	}
+	
 }
 
 // ******************************************************
@@ -66,10 +73,9 @@ void station_wait_for_train(struct station *station){
 			continue;
 		}else{
 			// seats are available for this passenger
-			station->waiting_passenger_count-=1;
 			station->available_seat_count-=1;
+			//station->boarded_passenger_count+=1;
 			pthread_mutex_unlock(&station->station_key);
-			printf("\nNew Creep Boarded\n");
 			return;
 		}
 	}
@@ -82,10 +88,13 @@ void station_wait_for_train(struct station *station){
 void station_on_board(struct station *station){
 	// count each passenger as they board
 	pthread_mutex_lock(&station->station_key);
-	station->allowed_passenger_count-=1;
+	station->boarded_passenger_count+=1;
+	station->waiting_passenger_count-=1;
 
-	if(station->waiting_passenger_count==0||station->allowed_passenger_count==0){
+	if((station->boarded_passenger_count==station->max_allowed_passengers)||(station->waiting_passenger_count==0)){
 		// signal train to leave
+		//printf("\n\t\t\tBoarded Passengers : %d\n", station->boarded_passenger_count);
+		//printf("\n\t\t\tWaiting Passengers : %d\n", station->waiting_passenger_count);
 		station->train_left=1;
 		pthread_cond_signal(&station->train_loaded);
 	}

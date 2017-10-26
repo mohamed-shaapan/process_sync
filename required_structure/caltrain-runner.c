@@ -19,6 +19,7 @@ volatile int threads_completed = 0;
 
 // thread functions
 // ************************************************
+// ************************************************
 void* passenger_thread(void *arg){
 
 	struct station *station = (struct station*)arg;
@@ -127,9 +128,12 @@ int main(){
 		}
 
 		int threads_to_reap = MIN(passengers_left, free_seats);
+		//printf("\n\t\tPassengers Should Board : %d\n", threads_to_reap);
 		int threads_reaped = 0;
 		while (threads_reaped < threads_to_reap) {
 			if (load_train_returned) {
+				//printf("\n\t\tWaiting passengers : %d", station.waiting_passenger_count);
+				//printf("\n\t\tAvailable Seats : %d\n", station.available_seat_count);
 				fprintf(stderr, "Error: station_load_train returned early!\n");
 				exit(1);
 			}

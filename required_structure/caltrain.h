@@ -4,7 +4,8 @@ struct station {
 	
 	int waiting_passenger_count;
 	int available_seat_count;
-	int allowed_passenger_count;
+	int boarded_passenger_count;
+	int max_allowed_passengers;
 	int train_left; // boolean
 
 	pthread_mutex_t station_key;
