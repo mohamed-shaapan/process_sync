@@ -13,7 +13,6 @@ struct station {
 	pthread_cond_t train_arrived;
 	pthread_cond_t train_loaded;
 
-	
 };
 
 void station_init(struct station *station);

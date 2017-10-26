@@ -37,7 +37,6 @@ void station_load_train(struct station *station, int count){
 
 	// 02 - no passengers or no empty seats
 	if(station->waiting_passenger_count==0||count==0){
-		//station->available_seat_count=0;
 		station->train_left=1;
 		pthread_mutex_unlock(&station->station_key);
 		return;
@@ -74,7 +73,6 @@ void station_wait_for_train(struct station *station){
 		}else{
 			// seats are available for this passenger
 			station->available_seat_count-=1;
-			//station->boarded_passenger_count+=1;
 			pthread_mutex_unlock(&station->station_key);
 			return;
 		}
@@ -93,8 +91,6 @@ void station_on_board(struct station *station){
 
 	if((station->boarded_passenger_count==station->max_allowed_passengers)||(station->waiting_passenger_count==0)){
 		// signal train to leave
-		//printf("\n\t\t\tBoarded Passengers : %d\n", station->boarded_passenger_count);
-		//printf("\n\t\t\tWaiting Passengers : %d\n", station->waiting_passenger_count);
 		station->train_left=1;
 		pthread_cond_signal(&station->train_loaded);
 	}
