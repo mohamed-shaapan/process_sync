@@ -99,6 +99,10 @@ void* train_arrive(void* arg){
 	printf("\n****************************************************************");
 
 	if(station->passenger_count==0){
+		printf("\n****************************************************************");
+		printf("\nTRAIN LEFT");
+		printf("\n****************************************************************");
+
 		pthread_mutex_unlock(&station_key);
 		pthread_exit(0);
 	}

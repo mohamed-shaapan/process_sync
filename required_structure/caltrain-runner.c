@@ -16,6 +16,9 @@
 // has returned) and are awaiting a station_on_board() invocation.
 volatile int threads_completed = 0;
 
+
+// thread functions
+// ************************************************
 void* passenger_thread(void *arg){
 
 	struct station *station = (struct station*)arg;
@@ -39,6 +42,8 @@ void* load_train_thread(void *args){
 	return NULL;
 }
 
+
+// ************************************************
 const char* alarm_error_str;
 int alarm_timeout;
 
@@ -62,8 +67,11 @@ void alarm_handler(int foo){
 /*
  * This creates a bunch of threads to simulate arriving trains and passengers.
  */
-int
-main(){
+
+
+// passenger function
+// ************************************************
+int main(){
 	
 	struct station station;
 	station_init(&station);
